@@ -1,0 +1,21 @@
+# K20Mon 后端配置。
+#
+# 只需要 mysql / jwt / system 三段：其余段是历史遗留的 GVA 配置，已删除。
+# 也可以完全不用本文件，改用环境变量：
+#   K20MON_MYSQL_DSN="user:pass@tcp(host:3306)/db?charset=utf8mb4&parseTime=True&loc=Local"
+#   K20MON_JWT_KEY="..."
+mysql:
+  path: 127.0.0.1
+  port: "3306"
+  config: charset=utf8mb4&parseTime=True&loc=Local
+  db-name: k20mon
+  username: k20mon
+  password: change-me
+
+jwt:
+  signing-key: change-me-to-a-long-random-string
+  expires-time: 7d
+  issuer: k20mon
+
+system:
+  addr: 8888

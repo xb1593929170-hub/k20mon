@@ -1,0 +1,22 @@
+[Unit]
+Description=K20Mon root control agent
+Documentation=https://github.com/yourname/k20mon
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment=K20MON_CONTROL_SOCKET=/run/k20mon-status/control.sock
+Environment=K20MON_SERVICES_FILE=/etc/k20mon/services.json
+Environment=K20MON_FRP_CONTAINER=natfrp-frpc
+ExecStart=/usr/bin/python3 /usr/local/libexec/k20mon_agent.py
+Restart=always
+RestartSec=3
+# 代理只写这几个路径：socket 目录、充电守护配置、服务目录缓存
+ReadWritePaths=/run/k20mon-status /etc/k20mon
+NoNewPrivileges=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "k20mon",
+    "name": "K20Mon",
+    "description": "设备监控与操作中心",
+    "category": "监控",
+    "owner_type": "mine",
+    "url": "http://127.0.0.1:8899",
+    "enabled": true
+  },
+  {
+    "id": "1panel",
+    "name": "1Panel",
+    "description": "服务器管理面板",
+    "category": "管理",
+    "owner_type": "mine",
+    "url": "https://example.com/1panel",
+    "enabled": false
+  },
+  {
+    "id": "it-tools",
+    "name": "IT Tools",
+    "description": "常用开发与运维工具",
+    "category": "工具",
+    "owner_type": "mine",
+    "url": "https://example.com/it-tools",
+    "enabled": false
+  }
+]

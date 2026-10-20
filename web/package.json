@@ -1,0 +1,24 @@
+{
+  "name": "k20mon-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "K20Mon standalone dashboard (Vue 3 + Element Plus)",
+  "scripts": {
+    "dev": "vite --host --mode development",
+    "build": "vite build --mode production",
+    "preview": "vite preview --host --mode production",
+    "test": "node tests/dashboard-refresh.test.js"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.8.2",
+    "element-plus": "^2.13.6",
+    "sortablejs": "^1.15.3",
+    "vue": "^3.5.31"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.6",
+    "vite": "^8.0.10"
+  }
+}

@@ -8,14 +8,45 @@ Wants=network-online.target
 Type=simple
 User=root
 Group=root
+
 Environment=K20MON_CONTROL_SOCKET=/run/k20mon-status/control.sock
 Environment=K20MON_SERVICES_FILE=/etc/k20mon/services.json
 Environment=K20MON_FRP_CONTAINER=natfrp-frpc
+
+# 下面这些都有默认值，只在和你的环境不一致时才需要打开。
+# 全部默认值见 docs/DEPLOY.md 的「环境变量总表」。
+#
+# Cloudflare Tunnel token 文件（cloudflare_status 用它判断 token 模式）
+#Environment=K20MON_CLOUDFLARED_CONFIG=/etc/cloudflared/config.yml
+#Environment=K20MON_CLOUDFLARED_TOKEN_FILE=/etc/cloudflared/tunnel.token
+#
+# Wi-Fi 网卡与 nmcli（留空自动探测）
+#Environment=K20MON_WIFI_DEVICE=wld0
+#Environment=K20MON_NMCLI=/usr/bin/nmcli
+#
+# 充电守护：配置、状态、限流节点、电量节点
+#Environment=K20MON_CHARGE_GUARD_CONFIG=/etc/k20-charge-guard.conf
+#Environment=K20MON_CHARGE_GUARD_STATE=/run/k20-charge-guard.state
+#Environment=K20MON_CHARGE_CURRENT_MAX=/sys/class/power_supply/pm8150b-charger/current_max
+#Environment=K20MON_CHARGE_CAPACITY=/sys/class/power_supply/qcom-battery/capacity
+#
+# 可选模块：外部定价脚本 + systemd timer（不用就保持关闭）
+#Environment=K20MON_RATE_SYNC_SCRIPT=/usr/local/bin/pricing-sync.sh
+#Environment=K20MON_RATE_SYNC_INSTALLER=/usr/local/bin/install-pricing-sync.sh
+#Environment=K20MON_RATE_SYNC_TIMER=pricing-sync.timer
+#Environment=K20MON_RATE_SYNC_SERVICE=pricing-sync.service
+#
+# socket 权限。默认 0660（root:root），后端容器以 root 运行时够用。
+# 后端改成非 root 才需要放宽到 0666。
+#Environment=K20MON_CONTROL_SOCKET_MODE=0660
+
 ExecStart=/usr/bin/python3 /usr/local/libexec/k20mon_agent.py
 Restart=always
 RestartSec=3
-# 代理只写这几个路径：socket 目录、充电守护配置、服务目录缓存
+
+# 代理只写这两个路径：socket 目录 和 充电守护/服务目录缓存
 ReadWritePaths=/run/k20mon-status /etc/k20mon
+# sysfs 写入（充电守护）需要 root，不能开 NoNewPrivileges
 NoNewPrivileges=false
 
 [Install]

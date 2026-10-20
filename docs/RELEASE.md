@@ -20,11 +20,16 @@ grep -rniE '你的域名|你的主机名|你的内网网段前缀|你的转发�
 git status --short
 git ls-files | grep -E 'deploy/(config\.yaml|\.env)$' && echo "！！配置文件被跟踪了" || echo "配置未跟踪"
 
-# 3. 全量校验
+# 3. 占位符 yourname 已经全部替换成你的仓库地址（否则 README 给的 AI 直链全是 404）
+grep -rn 'yourname/k20mon' --exclude-dir=.git \
+     --exclude='RELEASE.md' --exclude='CLEANUP.md' . \
+  || echo "占位符已替换"
+
+# 4. 全量校验
 ./scripts/verify.sh
 ```
 
-第 3 条会跑：gofmt、go vet、go test、go build、python 单测、npm test、npm build、compose config。
+第 4 条会跑：gofmt、go vet、go test、go build、python 单测、npm test、npm build、compose config。
 任何一个 FAIL 都先修掉再发。
 
 > `scripts/package-release.sh` 里还有一道保险：打包时会检查 `deploy/config.yaml`
@@ -74,27 +79,86 @@ git push -u origin main
 gh repo create k20mon --public --source=. --remote=origin --push
 ```
 
-### 推之前建议改掉模块路径占位符
+### 推之前必须改掉占位符 `yourname`
 
-仓库里 Go 模块路径是 `github.com/yourname/k20mon/server`，`yourname` 是占位符。
-你的仓库地址是 `github.com/<你的ID>/k20mon` 的话，改掉它：
+仓库里凡是要指向你自己仓库的地方，用的都是占位符 `yourname`：
+
+| 位置 | 内容 |
+|---|---|
+| `server/go.mod` 和所有 `*.go` 的 import | `github.com/yourname/k20mon/server` |
+| `README.md` 的「交给 AI 处理」章节 | `github.com/yourname/k20mon` 和三条 `raw.githubusercontent.com/yourname/...` 链接 |
+| `deploy/agent/k20mon-agent.service` 的 `Documentation=` | 仓库主页 |
+| `docs/*` 里的示例链接 | 同上 |
+
+**不改的后果**：Go 模块路径不影响构建（只影响 `go get`），但 README 里给使用者复制的
+AI 直链会全部 404。
+
+一次性替换（假设你的仓库是 `github.com/<你的ID>/k20mon`）：
+
+**注意要替换两个模式**：`github.com/yourname/k20mon` 匹配不到
+`raw.githubusercontent.com/yourname/k20mon`（前者不是后者的子串），所以 README 里那三条
+AI 直链要单独换一次。
 
 ```bash
 # Linux / macOS / Git Bash
-grep -rl 'github.com/yourname/k20mon' --include='*.go' --include='go.mod' . \
-  | xargs sed -i 's|github.com/yourname/k20mon|github.com/<你的ID>/k20mon|g'
+FILES=$(grep -rl 'yourname/k20mon' --include='*.go' --include='go.mod' \
+        --include='*.md' --include='*.service' .)
 
+# 1) 仓库地址（同时覆盖 go.mod、import、git clone 那条）
+echo "$FILES" | xargs sed -i 's|github\.com/yourname/k20mon|github.com/<你的ID>/k20mon|g'
+# 2) raw 直链（AI 读文档用，必须单独换）
+echo "$FILES" | xargs sed -i 's|raw\.githubusercontent\.com/yourname/k20mon|raw.githubusercontent.com/<你的ID>/k20mon|g'
+```
+
+```powershell
 # PowerShell
-Get-ChildItem -Recurse -Include *.go,go.mod |
-  ForEach-Object { (Get-Content $_ -Raw) -replace 'github.com/yourname/k20mon','github.com/<你的ID>/k20mon' |
-  Set-Content $_ -NoNewline }
+Get-ChildItem -Recurse -Include *.go,go.mod,*.md,*.service |
+  Where-Object { $_.FullName -notlike '*\.git\*' } |
+  ForEach-Object {
+    (Get-Content $_ -Raw) `
+      -replace 'github\.com/yourname/k20mon','github.com/<你的ID>/k20mon' `
+      -replace 'raw\.githubusercontent\.com/yourname/k20mon','raw.githubusercontent.com/<你的ID>/k20mon' |
+      Set-Content $_ -NoNewline
+  }
+```
 
-# 改完必须重新验证
+改完确认代码和链接里一个都不剩：
+
+```bash
+# 排除本文件和 CLEANUP.md —— 它们本身就在讲解这个占位符，会被误命中
+grep -rn 'yourname/k20mon' --exclude-dir=.git \
+     --exclude='RELEASE.md' --exclude='CLEANUP.md' . \
+  || echo "代码与链接里已无占位符"
+```
+
+实测：替换前全仓库 33 处命中，按上面两条 sed 跑完后，只剩本文件和 CLEANUP.md 里的说明文字。
+
+然后重新验证（模块路径变了必须重建）：
+
+```bash
 cd server && go build ./... && cd .. && ./scripts/verify.sh --no-web
 ```
 
-> 不改也能用（模块路径只影响 `go get`，本地和服务端构建都不受影响），
-> 但改了更规范。`docs/DEPLOY.md` 和本文件里的示例也要同步替换。
+> 改名后实测通过：`go vet` / `go test` / `go build` 全部正常，README 里三条 raw 直链也都换成了新地址。
+
+### 推送后验证 AI 直链真的能用
+
+README 里给使用者复制的三条链接必须是 200，否则别人粘给 AI 就是 404：
+
+```bash
+OWNER=<你的ID>
+for f in docs/AI-RESTORE.md docs/DEPLOY.md docs/API.md; do
+  curl -sS -o /dev/null -w "%{http_code}  $f\n" \
+    "https://raw.githubusercontent.com/$OWNER/k20mon/main/$f"
+done
+```
+
+期望四行全是 `200`。
+
+> **为什么用 `raw.githubusercontent.com` 而不是 `github.com/<owner>/<repo>/raw/...`**：
+> 后者会 302 跨域跳到前者。实测部分 AI 的网页抓取工具**不跟随跨域重定向**，
+> 会直接报 `fetch failed`。直链才稳。
+> 同理，整包下载要用 `https://github.com/<owner>/<repo>/archive/refs/heads/main.tar.gz`（实测 200，返回 application/x-gzip）。
 
 ### 仓库设置建议
 

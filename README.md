@@ -1,4 +1,4 @@
-﻿# K20Mon
+# K20Mon
 
 在 Android 手机上（Redmi K20 Pro / SM8150，Ubuntu 26.04 chroot）运行的**设备监控 + 运维控制台**。
 
@@ -129,9 +129,8 @@ cd deploy/agent && python3 -m unittest test_agent test_rate_sync -v
 | 接口契约 | [docs/API.md](docs/API.md) |
 | 内部实现 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | 用 AI 重建整个项目 | [docs/AI-RESTORE.md](docs/AI-RESTORE.md) |
-```
 
-详细步骤、端口占用处理、回滚方式见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+端口占用、故障排查、升级回滚都在 [docs/DEPLOY.md](docs/DEPLOY.md) 里。
 
 ## 环境变量
 
@@ -214,6 +213,53 @@ cd web && npm install && npm run test && npm run dev   # 8898 端口，代理到
 
 > 上面的链接带邀请参数（`?aff=...`），通过它注册我这边会有点返利，不影响你的价格。
 > 不想走邀请的话直接用 `https://voook.com` 即可。
+
+## 交给 AI 处理
+
+不想自己读文档的话，把下面这段直接复制给你的 AI（Claude / ChatGPT / DeepSeek / Claude Code 都行），它会自己去把项目拉下来。
+
+**方式一：AI 能联网**（带联网搜索、或能执行命令的）
+
+```text
+请帮我部署这个开源项目：K20Mon（跑在 Android 手机 Linux 上的设备监控 + 运维控制台）。
+
+项目地址：https://github.com/yourname/k20mon
+完整还原规格：https://raw.githubusercontent.com/yourname/k20mon/main/docs/AI-RESTORE.md
+部署步骤：https://raw.githubusercontent.com/yourname/k20mon/main/docs/DEPLOY.md
+接口文档：https://raw.githubusercontent.com/yourname/k20mon/main/docs/API.md
+
+请按这个顺序做：
+1. 先读 AI-RESTORE.md，用几句话告诉我这个项目的架构（三个进程分别负责什么、为什么写操作必须走 root 代理）；
+2. 再读 DEPLOY.md，按「完整流程速查」给我一份可以直接执行的命令清单；
+3. 需要我提供的信息（设备架构、设备 IP、MySQL 地址与密码、要暴露的端口）整理成一个清单问我，不要自己假设；
+4. 我给完信息后，逐步输出命令，每步告诉我预期输出是什么、失败了怎么排查。
+```
+
+**方式二：AI 不能联网**
+
+把 `docs/AI-RESTORE.md` 整个文件的内容粘贴给它，然后追加一句：
+
+```text
+按这份文档把 K20Mon 项目完整实现出来。先输出文件树，再逐个文件给完整代码，
+不要省略、不要用 TODO 占位。全部给完后，按文档最后的「验收清单」自检一遍。
+```
+
+**方式三：AI 能执行命令**（Claude Code / Codex / 任何有 shell 的 agent）
+
+```bash
+git clone https://github.com/yourname/k20mon.git
+cd k20mon && cat docs/AI-RESTORE.md docs/DEPLOY.md
+```
+
+> **`yourname` 是占位符，必须换成你自己的 GitHub 用户名**，否则上面几条链接全是 404。
+> 替换方法见 [docs/RELEASE.md](docs/RELEASE.md#推之前必须改掉占位符-yourname)——
+> 一次替换会同时改掉 Go 模块路径和这些链接。
+>
+> 为什么用 `raw.githubusercontent.com` 而不是 `github.com/.../raw/...`：后者会 302 跳到
+> 前者，而部分 AI 的抓取工具**不跟随跨域重定向**，会直接失败。直链最稳。
+>
+> AI 没有你的设备是连不上手机的，所以它只能生成命令和代码，最后执行还得你来。
+> 想让它直接操作设备，得给它 SSH 权限（方式三那种）。
 
 ## License
 

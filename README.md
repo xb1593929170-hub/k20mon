@@ -11,6 +11,12 @@
                                               └── MySQL                →  历史采样 + 服务目录
 ```
 
+<img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/9b011a90-e0f3-4048-bcff-8f2ae46f54d1" />
+<img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/794ba073-2f6b-4536-b931-66ca6972111b" />
+<img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/530077d1-db7d-4bb5-8b0e-b84d142f42b4" />
+<img width="1920" height="869" alt="image" src="https://github.com/user-attachments/assets/e60cebed-3f19-478b-9fe1-b68fcf070f14" />
+
+
 ## 功能
 
 | 模块 | 说明 |

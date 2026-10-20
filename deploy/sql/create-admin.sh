@@ -22,8 +22,11 @@
 #       bcrypt 生成依赖 python3（没有 python3 也会自动用 docker 跑 python 镜像）。
 #
 # 可覆盖的环境变量：
-#   MYSQL_CLIENT_IMAGE   docker 里的 mysql 客户端镜像   默认 mysql:8
-#   PYTHON_IMAGE         docker 里的 python 镜像        默认 python:3.12-alpine
+#   MYSQL_CLIENT_IMAGE   docker 里的 mysql 客户端镜像   默认自动挑本地已有的 mysql:8 / mysql:8.4
+#   PYTHON_IMAGE         docker 里的 python 镜像        默认自动挑本地已有的 python:3.12-alpine
+#
+# 说明：脚本会优先使用**本地已有**的镜像，避免在拉不到 Docker Hub 的机器上卡住。
+#       人手一台手机跑这个项目时经常连不上 Docker Hub，所以默认不主动 pull。
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -39,8 +42,38 @@ SQL_ONLY=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-MYSQL_CLIENT_IMAGE="${MYSQL_CLIENT_IMAGE:-mysql:8}"
-PYTHON_IMAGE="${PYTHON_IMAGE:-python:3.12-alpine}"
+# 优先用本地已有的镜像，避免在拉不到 Docker Hub 的机器上（比如手机）卡住。
+# 用户显式指定的环境变量优先级最高。
+pick_image() {
+  local explicit="$1"; shift
+  if [[ -n "$explicit" ]]; then
+    echo "$explicit"
+    return
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "$1"
+    return
+  fi
+  local candidate
+  for candidate in "$@"; do
+    if docker image inspect "$candidate" >/dev/null 2>&1; then
+      echo "$candidate"
+      return
+    fi
+  done
+  # 退一步：找本地任意同名仓库的镜像（如 mysql:8.4.11 代替 mysql:8）
+  local repo="${1%%:*}"
+  local local_match
+  local_match="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^${repo}:[0-9]" | head -1)"
+  if [[ -n "$local_match" ]]; then
+    echo "$local_match"
+    return
+  fi
+  echo "$1"
+}
+
+MYSQL_CLIENT_IMAGE="$(pick_image "${MYSQL_CLIENT_IMAGE:-}" mysql:8 mysql:8.4 mysql:8.0)"
+PYTHON_IMAGE="$(pick_image "${PYTHON_IMAGE:-}" python:3.12-alpine python:3-alpine python:3.12)"
 
 die() { echo "错误: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
@@ -95,14 +128,27 @@ bcrypt_hash() {
 
 # ---------------------------------------------------------------------------
 # mysql 客户端：优先本地，没有就用 docker
+#
+# 用 docker 跑客户端时有个坑：容器里的 127.0.0.1 是容器自己，连不到宿主机的
+# MySQL。所以当目标是回环地址时，换成 host.docker.internal 并加上 host-gateway
+# （Docker 20.10+ 支持，Linux 和 Docker Desktop 都可用）。
 # ---------------------------------------------------------------------------
+DOCKER_HOST_ARGS=()
+DOCKER_TARGET_HOST="$HOST"
+case "$HOST" in
+  127.0.0.1|localhost|::1)
+    DOCKER_TARGET_HOST="host.docker.internal"
+    DOCKER_HOST_ARGS=(--add-host=host.docker.internal:host-gateway)
+    ;;
+esac
+
 mysql_exec() {
   local sql="$1"
   if command -v mysql >/dev/null 2>&1; then
     MYSQL_PWD="$ROOT_PASS" mysql -h "$HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 -e "$sql"
   else
-    docker run --rm -i -e MYSQL_PWD="$ROOT_PASS" "$MYSQL_CLIENT_IMAGE" \
-      mysql -h "$HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 -e "$sql"
+    docker run --rm -i "${DOCKER_HOST_ARGS[@]}" -e MYSQL_PWD="$ROOT_PASS" "$MYSQL_CLIENT_IMAGE" \
+      mysql -h "$DOCKER_TARGET_HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 -e "$sql"
   fi
 }
 
@@ -111,12 +157,14 @@ mysql_exec_file() {
   if command -v mysql >/dev/null 2>&1; then
     MYSQL_PWD="$ROOT_PASS" mysql -h "$HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 < "$file"
   else
-    docker run --rm -i -e MYSQL_PWD="$ROOT_PASS" "$MYSQL_CLIENT_IMAGE" \
-      mysql -h "$HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 < "$file"
+    docker run --rm -i "${DOCKER_HOST_ARGS[@]}" -e MYSQL_PWD="$ROOT_PASS" "$MYSQL_CLIENT_IMAGE" \
+      mysql -h "$DOCKER_TARGET_HOST" -P "$PORT" -u "$ROOT_USER" --default-character-set=utf8mb4 < "$file"
   fi
 }
 
 info "生成 bcrypt hash ..."
+info "    mysql 客户端镜像 : $MYSQL_CLIENT_IMAGE"
+info "    python 镜像      : $PYTHON_IMAGE"
 HASH="$(bcrypt_hash "$ADMIN_PASS")"
 [[ -n "$HASH" ]] || die "bcrypt 生成失败"
 

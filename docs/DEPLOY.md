@@ -73,8 +73,12 @@ id  username  enable  is_bcrypt
 
 脚本会自动解决依赖：
 
-- 有 `python3` + `bcrypt` 就用它算 hash；没有就试 `htpasswd`；再没有就用 `docker run python:3.12-alpine`
-- 有 `mysql` 客户端就本地执行；没有就用 `docker run mysql:8 mysql ...`
+- 有 `python3` + `bcrypt` 就用它算 hash；没有就试 `htpasswd`；再没有就用 docker 跑 python 镜像
+- 有 `mysql` 客户端就本地执行；没有就用 docker 跑 mysql 镜像
+- 用 docker 跑客户端时，如果 `--host` 是 `127.0.0.1`，脚本会自动换成 `host.docker.internal`
+  并加 `--add-host=host.docker.internal:host-gateway`（容器里的 127.0.0.1 是容器自己，连不到宿主机）
+- 优先使用**本地已有**的镜像，避免在拉不到 Docker Hub 的机器上卡住
+  （要指定就设 `MYSQL_CLIENT_IMAGE` / `PYTHON_IMAGE`）
 
 常用变体：
 
@@ -611,6 +615,12 @@ ss -ltnp | grep -E ':(8899|18888)\b'
 | `nginx:alpine` 拉不到 | 同上 | `export K20MON_WEB_RUNTIME=<本地已有的 nginx:tag>`，或 `docker images \| grep nginx` |
 | `node:22-alpine` 拉不到 | 同上 | 本机构建前端后 `--with-web-dist` 打包上传 |
 | `no space left on device` | 磁盘满 | `docker system prune -af` |
+| 构建长时间无输出 | Docker Hub 不可达，`docker build` 在静默重试 | `build-images.sh` 有预检会提前提示；按提示换本地镜像或走离线包 |
+
+> **关于 Docker Hub**：手机这类设备经常连不上 `registry-1.docker.io`（TLS 中断或被限流），
+> 表现为 `docker pull` 长时间挂住而不是报错。`scripts/build-images.sh` 会先探一次并给出
+> 三个替代方案。最稳的做法是**在能联网的机器上构建好，导出离线包传过去**（见
+> [RELEASE.md §4](RELEASE.md#4-离线分发手机不能拉镜像时)）。
 
 ### 前端能开但没数据
 

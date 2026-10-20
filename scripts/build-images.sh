@@ -64,6 +64,45 @@ cat <<EOF
     输出镜像       : $SERVER_IMAGE / $WEB_IMAGE
 EOF
 
+# ---------------------------------------------------------------------------
+# 预检：基础镜像是否本地已有 / 能不能拉。
+# 在拉不到 Docker Hub 的机器上（手机很常见），docker build 会静默卡很久，
+# 这里先快速探一次，把问题提前说清楚。
+# ---------------------------------------------------------------------------
+BASE_IMAGES=(
+  "golang:1.24-alpine"
+  "node:22-alpine"
+  "$K20MON_SERVER_RUNTIME"
+  "$K20MON_WEB_RUNTIME"
+)
+MISSING=()
+for img in "${BASE_IMAGES[@]}"; do
+  docker image inspect "$img" >/dev/null 2>&1 || MISSING+=("$img")
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  info "本地缺少这些基础镜像：${MISSING[*]}"
+  if timeout 8 docker pull --quiet "${MISSING[0]}" >/dev/null 2>&1; then
+    info "Docker Hub 可达，构建时按需拉取"
+  else
+    echo
+    echo "警告：拉不到 Docker Hub，且上面这些镜像本地也没有。"
+    echo
+    echo "  三个办法（按推荐顺序）："
+    echo "    1. 换成本地已有的镜像："
+    echo "         export K20MON_SERVER_RUNTIME=alpine:3.20"
+    echo "         export K20MON_WEB_RUNTIME=nginx:alpine"
+    echo "      先看看本地有什么：docker images | grep -E 'alpine|nginx|golang|node'"
+    echo "    2. 在能联网的机器上构建好，导出离线包再传过来："
+    echo "         ./scripts/build-images.sh --tag $TAG --save"
+    echo "         gunzip -c k20mon-images-$TAG.tar.gz | docker load"
+    echo "    3. 配置镜像加速器后重试"
+    echo
+    echo "继续尝试构建（可能失败或长时间无响应）..."
+    echo
+  fi
+fi
+
 if [[ "$MULTIARCH" -eq 1 ]]; then
   command -v docker >/dev/null || die "需要 docker"
   docker buildx version >/dev/null 2>&1 || die "需要 docker buildx 插件"

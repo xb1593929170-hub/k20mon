@@ -51,13 +51,15 @@ mkdir -p "$STAGE"
   --exclude='__pycache__' \
   --exclude='*.pyc' \
   --exclude='deploy/config.yaml' \
+  --exclude='./deploy/config.yaml' \
   --exclude='deploy/.env' \
+  --exclude='./deploy/.env' \
   .) | (cd "$STAGE" && tar xf -)
 
-# 保险：确认本地配置没有被带进去（里面有数据库密码）
+# 保险一：暂存目录里检查本地配置（里面有数据库密码，绝不能进发布包）
 for leaked in "deploy/config.yaml" "deploy/.env" "deploy/sql/.schema.tmp.sql"; do
   if [[ -e "$STAGE/$leaked" ]]; then
-    die "$leaked 出现在了发布包里，已中止。请检查 .gitignore 和暂存逻辑"
+    die "$leaked 出现在了发布包里，已中止。请检查 .gitignore 和 tar 的 --exclude 规则"
   fi
 done
 
@@ -82,6 +84,18 @@ fi
 ARCHIVE="$OUT_DIR/k20mon-${VERSION}.tar.gz"
 info "打包 $ARCHIVE ..."
 ( cd "$WORK" && tar czf "$ARCHIVE" k20mon )
+
+# 保险二：直接检查成品压缩包的内容。
+# 比检查暂存目录更可靠 —— 不受 tar 在不同平台上 --exclude 匹配差异的影响。
+FORBIDDEN="$(tar tzf "$ARCHIVE" | grep -E '(^|/)(deploy/(config\.yaml|\.env)|\.schema\.tmp\.sql)$' || true)"
+if [[ -n "$FORBIDDEN" ]]; then
+  rm -f "$ARCHIVE"
+  echo "错误：发布包里出现了不该有的文件，已删除成品：" >&2
+  echo "$FORBIDDEN" | sed 's/^/  - /' >&2
+  echo "这些文件含数据库密码，请修掉 --exclude 规则后重试。" >&2
+  exit 1
+fi
+info "内容检查通过（无本地配置 / 密钥）"
 
 if command -v sha256sum >/dev/null 2>&1; then
   ( cd "$OUT_DIR" && sha256sum "$(basename "$ARCHIVE")" > "$(basename "$ARCHIVE").sha256" )

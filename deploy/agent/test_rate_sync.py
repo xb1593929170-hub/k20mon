@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 import importlib.util
 from pathlib import Path
 from unittest.mock import patch
@@ -92,7 +92,7 @@ class RateSyncTest(unittest.TestCase):
                 "OnUnitActiveUSec=",
                 "AccuracyUSec=5s",
             ]), ""),
-            (0, "Fri 2026-10-16 02:14:13 CST 41s Fri 2026-10-16 02:13:13 CST 18s ago sync-group-rate.timer sync-group-rate.service\n", ""),
+            (0, "Fri 2026-10-16 02:14:13 CST 41s Fri 2026-10-16 02:13:13 CST 18s ago pricing-sync.timer pricing-sync.service\n", ""),
         ]):
             result = rate_sync.timer_state()
         self.assertEqual(result["next_trigger"], "Fri 2026-10-16 02:14:13 CST")

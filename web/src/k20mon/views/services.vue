@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="services-page">
     <header class="services-header">
       <div>
@@ -548,14 +548,16 @@ const statusLabel = (state) => ({
   disabled: '已停用'
 }[state] || '未检查')
 
+// 根据服务 id 和分类猜一个图标。只做关键词匹配，不绑定任何具体服务名。
 const serviceIcon = (service) => {
   const key = `${service.id} ${service.category}`.toLowerCase()
-  if (key.includes('panel') || key.includes('监控')) return Monitor
-  if (key.includes('api') || key.includes('ai') || key.includes('deepseek') || key.includes('hermes')) return Connection
-  if (key.includes('file') || key.includes('存储')) return Files
-  if (key.includes('bitwarden') || key.includes('安全')) return Lock
+  if (key.includes('monitor') || key.includes('监控') || key.includes('status')) return Monitor
+  if (key.includes('api') || key.includes('gateway') || key.includes('网关')) return Connection
+  if (key.includes('panel') || key.includes('admin') || key.includes('管理')) return Monitor
+  if (key.includes('file') || key.includes('storage') || key.includes('存储')) return Files
+  if (key.includes('auth') || key.includes('vault') || key.includes('password') || key.includes('安全')) return Lock
   if (key.includes('tool') || key.includes('工具')) return Tools
-  if (key.includes('k20')) return DataBoard
+  if (key.includes('media') || key.includes('媒体') || key.includes('video')) return DataBoard
   return Grid
 }
 

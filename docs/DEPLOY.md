@@ -312,7 +312,7 @@ PY
 期望输出类似：
 
 ```json
-{"ok": true, "wifi": {"available": true, "interface": "wld0", "connected": true, "ssid": "MyWiFi", "ip": "192.168.1.2"}}
+{"ok": true, "wifi": {"available": true, "interface": "wld0", "connected": true, "ssid": "MyWiFi-5G", "ip": "192.168.1.100"}}
 ```
 
 ### 禁用动态定价模块（可选）
@@ -465,7 +465,11 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8899/
 | `K20MON_WIFI_DEVICE` | 自动探测 | 指定 Wi-Fi 网卡 | 代理 |
 | `K20MON_NMCLI` | `nmcli` | nmcli 路径 | 代理 |
 | `K20MON_CLOUDFLARED_CONFIG` | `/etc/cloudflared/config.yml` | CF Tunnel 配置 | 代理 |
-| `K20MON_CLOUDFLARED_TOKEN_FILE` | `/etc/cloudflared/token` | CF Tunnel token | 代理 |
+| `K20MON_CLOUDFLARED_TOKEN_FILE` | `/etc/cloudflared/tunnel.token` | CF Tunnel token | 代理 |
+| `K20MON_RATE_SYNC_SCRIPT` | `/usr/local/bin/pricing-sync.sh` | 外部定价脚本路径（可选模块） | 代理 |
+| `K20MON_RATE_SYNC_INSTALLER` | `/usr/local/bin/install-pricing-sync.sh` | 该脚本的安装器（可选） | 代理 |
+| `K20MON_RATE_SYNC_TIMER` | `pricing-sync.timer` | 对应的 systemd timer | 代理 |
+| `K20MON_RATE_SYNC_SERVICE` | `pricing-sync.service` | 对应的 systemd service | 代理 |
 | `MYSQL_PWD` / `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` | — | `create-admin.sh` 与 `make db-*` 用 | 脚本 |
 
 ---

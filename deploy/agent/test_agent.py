@@ -14,8 +14,8 @@ spec.loader.exec_module(agent)
 class HelperTest(unittest.TestCase):
     def test_split_nmcli_honours_escaped_colons(self):
         self.assertEqual(
-            agent.split_nmcli(r"wld0:wifi:connected:My\:Net:192.168.1.5/24"),
-            ["wld0", "wifi", "connected", "My:Net", "192.168.1.5/24"],
+            agent.split_nmcli(r"wld0:wifi:connected:My\:Net:192.0.2.5/24"),
+            ["wld0", "wifi", "connected", "My:Net", "192.0.2.5/24"],
         )
 
     def test_split_nmcli_keeps_trailing_backslash(self):

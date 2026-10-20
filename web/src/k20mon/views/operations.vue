@@ -498,7 +498,7 @@ const loadRateSyncStatus = async () => {
 }
 
 const saveRateSync = async () => {
-  if (!(await confirmAction('保存后会修改 systemd 定时任务，并可能更新 sub2api 分组售价。确定继续吗？'))) return
+  if (!(await confirmAction('保存后会修改 systemd 定时任务，并可能更新外部定价脚本的售价。确定继续吗？'))) return
   rateSyncSaving.value = true
   try {
     rateSyncResult.value = await configureRateSync({ ...rateSync })
@@ -512,7 +512,7 @@ const saveRateSync = async () => {
 }
 
 const doRateSync = async () => {
-  if (!(await confirmAction('立即执行会写入 sub2api 分组售价和风控阈值，确定继续吗？'))) return
+  if (!(await confirmAction('立即执行会写入外部定价脚本的售价和风控阈值，确定继续吗？'))) return
   rateSyncRunning.value = true
   try {
     rateSyncResult.value = await runRateSync()

@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Read and safely control the existing sub2api dynamic pricing timer."""
+﻿#!/usr/bin/env python3
+"""Read and safely control an external pricing script driven by a systemd timer.
+
+The script, timer and service names are all configurable through
+K20MON_RATE_SYNC_* environment variables, so this module stays usable with
+any external pricing job. It is optional: when the external script is
+missing, only the related endpoints report an error.
+"""
 
 from __future__ import annotations
 
@@ -11,13 +17,13 @@ import time
 from pathlib import Path
 
 RATE_SCRIPT = Path(os.environ.get(
-    "K20MON_RATE_SYNC_SCRIPT", "/usr/local/bin/sync-group-rate.sh"
+    "K20MON_RATE_SYNC_SCRIPT", "/usr/local/bin/pricing-sync.sh"
 ))
 INSTALL_SCRIPT = Path(os.environ.get(
-    "K20MON_RATE_SYNC_INSTALLER", "/usr/local/bin/install-sync-timer.sh"
+    "K20MON_RATE_SYNC_INSTALLER", "/usr/local/bin/install-pricing-sync.sh"
 ))
-TIMER_UNIT = os.environ.get("K20MON_RATE_SYNC_TIMER", "sync-group-rate.timer")
-SERVICE_UNIT = os.environ.get("K20MON_RATE_SYNC_SERVICE", "sync-group-rate.service")
+TIMER_UNIT = os.environ.get("K20MON_RATE_SYNC_TIMER", "pricing-sync.timer")
+SERVICE_UNIT = os.environ.get("K20MON_RATE_SYNC_SERVICE", "pricing-sync.service")
 MIN_INTERVAL_SECONDS = 30
 MAX_INTERVAL_SECONDS = 7 * 24 * 3600
 DEFAULTS = {
@@ -377,7 +383,7 @@ def status() -> dict:
         ),
         "recent_logs": logs,
         "checked_at": time.time(),
-        "scope": "sub2api group rate_multiplier",
+        "scope": "external pricing job",
         "database_migration_required": False,
     }
 

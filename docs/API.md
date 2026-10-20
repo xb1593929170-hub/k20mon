@@ -517,10 +517,10 @@ curl -X PUT http://127.0.0.1:18888/k20mon/operations/charge-guard \
       "interface": "wld0",
       "state": "connected",
       "connected": true,
-      "connection": "PDCN_5G",
-      "ssid": "PDCN_5G",
-      "ip": "192.168.1.2",
-      "cidr": "192.168.1.2/24",
+      "connection": "MyWiFi-5G",
+      "ssid": "MyWiFi-5G",
+      "ip": "192.168.1.100",
+      "cidr": "192.168.1.100/24",
       "gateway": "192.168.1.1",
       "signal": 100,
       "frequency_mhz": 5200
@@ -549,8 +549,8 @@ curl -X POST "http://127.0.0.1:18888/k20mon/operations/wifi/scan?interface=wld0"
     "ok": true,
     "interface": "wld0",
     "networks": [
-      {"ssid": "PDCN_5G", "in_use": true, "signal": 100, "security": "WPA2", "channel": "36", "frequency_mhz": "5200", "interface": "wld0"},
-      {"ssid": "CMCC-2.4G", "in_use": false, "signal": 72, "security": "WPA2", "channel": "6", "frequency_mhz": "2437", "interface": "wld0"}
+      {"ssid": "MyWiFi-5G", "in_use": true, "signal": 100, "security": "WPA2", "channel": "36", "frequency_mhz": "5200", "interface": "wld0"},
+      {"ssid": "Neighbour-2.4G", "in_use": false, "signal": 72, "security": "WPA2", "channel": "6", "frequency_mhz": "2437", "interface": "wld0"}
     ]
   },
   "msg": "成功"
@@ -570,7 +570,7 @@ curl -X POST "http://127.0.0.1:18888/k20mon/operations/wifi/scan?interface=wld0"
 ```bash
 curl -X POST http://127.0.0.1:18888/k20mon/operations/wifi/connect \
   -H "x-token: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"interface":"wld0","ssid":"PDCN_5G","password":"你的密码"}'
+  -d '{"interface":"wld0","ssid":"MyWiFi-5G","password":"你的密码"}'
 ```
 
 ```json
@@ -622,7 +622,7 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/wifi/disconnect \
 {"code": 0, "data": {"ok": true, "rate_sync": {"available": true, "config": {...}, "timer": {...}, "pricing": {...}, "recent_logs": []}}, "msg": "成功"}
 ```
 
-> 这个模块控制外部脚本 `sync-group-rate.sh`，不是本项目的一部分。缺文件时 `available: false`。
+> 这个模块控制外部脚本 `pricing-sync.sh`，不是本项目的一部分。缺文件时 `available: false`。
 
 ### `PUT /k20mon/operations/rate-sync/config`
 
@@ -640,7 +640,7 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/wifi/disconnect \
   "data": {
     "ok": true,
     "tunnels": {
-      "ssh": {"name": "ssh", "type": "tcp", "local_ip": "127.0.0.1", "local_port": 22, "remote_port": 57923, "status": "configured", "endpoint": null},
+      "ssh": {"name": "ssh", "type": "tcp", "local_ip": "127.0.0.1", "local_port": 22, "remote_port": 51022, "status": "configured", "endpoint": null},
       "mysql": {"name": "mysql", "type": "tcp", "local_ip": "127.0.0.1", "local_port": 8080, "remote_port": 31608, "status": "configured", "endpoint": null}
     }
   },
@@ -657,7 +657,7 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/wifi/disconnect \
 ```bash
 curl -X PUT http://127.0.0.1:18888/k20mon/operations/frp/config \
   -H "x-token: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"tunnels":[{"name":"ssh","local_ip":"127.0.0.1","local_port":22,"remote_port":57923}]}'
+  -d '{"tunnels":[{"name":"ssh","local_ip":"127.0.0.1","local_port":22,"remote_port":51022}]}'
 ```
 
 ```json
@@ -699,8 +699,8 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/frp/restart -H "x-token: $
     "offline": 1,
     "services": [
       {
-        "id": "1panel", "name": "1Panel", "description": "服务器管理面板",
-        "category": "管理", "owner_type": "mine", "url": "https://1panel.example.com",
+        "id": "example-panel", "name": "管理面板", "description": "替换成你自己的服务",
+        "category": "管理", "owner_type": "mine", "url": "https://example.com/panel",
         "enabled": true, "state": "online", "reachable": true,
         "http_code": 200, "response_ms": 42, "reason": null, "checked_at": 1792471643.6
       }
@@ -729,11 +729,11 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/frp/restart -H "x-token: $
 ```bash
 curl -X POST http://127.0.0.1:18888/k20mon/operations/services \
   -H "x-token: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"id":"jellyfin","name":"Jellyfin","description":"媒体库","category":"媒体","ownerType":"mine","url":"http://192.168.1.2:8096","enabled":true}'
+  -d '{"id":"example-media","name":"example-media","description":"媒体库","category":"媒体","ownerType":"mine","url":"http://192.168.1.100:8096","enabled":true}'
 ```
 
 ```json
-{"code": 0, "data": {"ok": true, "message": "服务已添加", "service": {"id": "jellyfin", "name": "Jellyfin", "sort_order": 8, "enabled": true}}, "msg": "成功"}
+{"code": 0, "data": {"ok": true, "message": "服务已添加", "service": {"id": "example-media", "name": "example-media", "sort_order": 8, "enabled": true}}, "msg": "成功"}
 ```
 
 校验失败：
@@ -758,7 +758,7 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/services \
 ```bash
 curl -X PUT http://127.0.0.1:18888/k20mon/operations/services/owner \
   -H "x-token: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"id":"jellyfin","ownerType":"other"}'
+  -d '{"id":"example-media","ownerType":"other"}'
 ```
 
 ### `POST /k20mon/operations/services/order`
@@ -768,7 +768,7 @@ curl -X PUT http://127.0.0.1:18888/k20mon/operations/services/owner \
 ```bash
 curl -X POST http://127.0.0.1:18888/k20mon/operations/services/order \
   -H "x-token: $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"ids":["k20mon","1panel","jellyfin","it-tools"]}'
+  -d '{"ids":["k20mon","example-panel","example-media","example-tools"]}'
 ```
 
 ```json
@@ -778,11 +778,11 @@ curl -X POST http://127.0.0.1:18888/k20mon/operations/services/order \
 ### `DELETE /k20mon/operations/services/:id`
 
 ```bash
-curl -X DELETE http://127.0.0.1:18888/k20mon/operations/services/jellyfin -H "x-token: $TOKEN"
+curl -X DELETE http://127.0.0.1:18888/k20mon/operations/services/example-media -H "x-token: $TOKEN"
 ```
 
 ```json
-{"code": 0, "data": {"ok": true, "message": "服务已删除", "id": "jellyfin"}, "msg": "成功"}
+{"code": 0, "data": {"ok": true, "message": "服务已删除", "id": "example-media"}, "msg": "成功"}
 ```
 
 不存在时：

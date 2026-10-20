@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """K20Mon root control agent.
 
 Runs as root and exposes a *whitelisted* set of privileged operations over a
@@ -54,7 +54,7 @@ CLOUDFLARED_CONFIG = Path(os.environ.get(
     "K20MON_CLOUDFLARED_CONFIG", "/etc/cloudflared/config.yml"
 ))
 CLOUDFLARED_TOKEN_FILE = Path(os.environ.get(
-    "K20MON_CLOUDFLARED_TOKEN_FILE", "/etc/cloudflared/doudou.token"
+    "K20MON_CLOUDFLARED_TOKEN_FILE", "/etc/cloudflared/tunnel.token"
 ))
 SERVICES_FILE = Path(os.environ.get(
     "K20MON_SERVICES_FILE", "/etc/k20mon/services.json"

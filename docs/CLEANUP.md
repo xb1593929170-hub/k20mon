@@ -124,17 +124,44 @@ grep -rn 'status.json' server/ web/src/        # → 无结果
 | `web/dist-standalone/` | `web/dist/` | 只有一个构建产物目录 |
 | `web/index-standalone.html` | `web/index.html` | 同上 |
 
-## 五、有意不做的改动
+## 五、私人数据清理清单
+
+源码里的业务逻辑一行没动，但所有指向真实环境的数据都换成了占位值。逐项列出，方便核对：
+
+| 位置 | 原来 | 现在 |
+|---|---|---|
+| `server/model/services.go` `DefaultServiceCatalog` | 8 条作者自己的真实服务与个人域名 | 只留 3 条占位：K20Mon 自己 + `example-panel` / `example-tools` 指向 `example.com`，且默认停用 |
+| `deploy/services.json.example` | 同上 8 条真实域名 | 同上占位 |
+| `deploy/agent/k20mon_agent.py` `DEFAULT_SERVICES` | 同上（agent 侧的一份拷贝） | **整段删除** —— 修掉死代码后 agent 只从 `/etc/k20mon/services.json` 读，不再内置任何服务 |
+| `deploy/agent/k20mon_agent.py` `CLOUDFLARED_TOKEN_FILE` | `/etc/cloudflared/<作者名>.token` | `/etc/cloudflared/tunnel.token` |
+| `deploy/agent/rate_sync.py` 脚本 / installer / timer / service 的默认名 | 指向作者自己那套外部脚本与 systemd 单元名 | 换成中性的 `pricing-sync.sh` / `install-pricing-sync.sh` / `pricing-sync.timer` / `.service`，且全部可由 `K20MON_RATE_SYNC_*` 环境变量覆盖 |
+| `deploy/agent/rate_sync.py` 文档串与 `scope` 字段 | 点名了某个第三方 API 网关产品 | 改成 `external pricing job` 这类中性描述 |
+| `web/src/k20mon/views/services.vue` `serviceIcon()` | 图标匹配里硬编码了作者的服务名与分类词 | 只按 `id` + `category` 的中英文关键词猜图标，不绑定任何具体服务 |
+| `web/src/k20mon/views/operations.vue` 二次确认文案 | 提到该第三方产品 | 改成「外部定价脚本」 |
+| `web/src/api/auth.js` `SESSION_KEY` | `k20mon.standalone.session.v1` | `k20mon.session.v1` |
+| `docs/*` 所有示例 | 真实 Wi-Fi SSID、内网 IP、转发端口、网关 IP | `MyWiFi-5G` / `192.168.1.100` / 示例端口；服务名统一为 `example-*` |
+| `deploy/config.yaml`（DB 密码、JWT 密钥） | 真实值 | 不入库，只留 `config.yaml.example` 占位 |
+| `deploy/k20mon/deploy.ps1` | 写死主机名、转发端口、旧容器名 | 整个删除，改成文档里的可复制步骤 |
+| JWT 默认签名密钥 | 内置一个固定值 | 改为**必填**，缺失直接启动失败 |
+
+清理后的验证（把模式换成你自己的即可）：
+
+```bash
+grep -rniE '你的域名|你的主机名|你的内网网段|你的转发端口|你的业务关键词' \
+  --exclude-dir=.git .    # → 无输出
+```
+
+## 六、有意不做的改动
 
 以下问题**本次没有改**，因为它们超出「删减 + 开源」的范围，或者会改变行为：
 
 1. **采集路径写死 SM8150**：`batteryPath`、`chargerPath`、GPU devfreq 路径都是这台机器的。抽象成可配置需要引入机型探测，改动面大，改成在 `docs/DEPLOY.md` 里说明。
 2. **JWT 密钥无默认值**：原代码内置了一个固定的默认签名密钥，本项目改成**必填**（缺失直接启动失败）。这是有意的行为变更，避免公开仓库带着一个人人皆知的默认密钥。同理，原代码里的默认服务目录种子指向作者的私有域名，已替换为占位地址。
 3. **没有前端代码分割**：单包 1.2 MB（gzip 380 KB）。局域网使用够，公网可以再做 `manualChunks`。
-4. **`rate_sync.py` 仍是外部依赖**：它控制的是作者自己的定价脚本，没有通用化，保留为可选。
+4. **`rate_sync.py` 仍是外部依赖**：它控制的是一个外部的定价脚本 + systemd timer，脚本本身不属于本项目，所以默认值只能给一个中性名字。要用的话设 `K20MON_RATE_SYNC_SCRIPT` / `K20MON_RATE_SYNC_TIMER` 等环境变量指向你自己的脚本；不设也不影响其它功能，只是相关按钮会报「任务不可用」。
 5. **没有审计日志**：删掉死代码后就没有审计功能了。如果需要，应该在 `callAction` 里加，而不是恢复原来那段没人调用的代码。
 
-## 六、验证方式
+## 七、验证方式
 
 删减后的仓库经过以下验证（详见 README「开发与校验」）：
 

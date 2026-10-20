@@ -1,12 +1,14 @@
 -- ---------------------------------------------------------------------------
 -- 建一个管理员账号
 --
+-- 本文件只含 SQL 模板，不含任何真实账号或密码。
+--
 -- 直接执行本文件是不行的：password 必须是 bcrypt hash，不能写明文。
 -- 两种用法：
 --
 --   1) 用脚本自动生成 hash 并插入（推荐）：
---        ./deploy/sql/create-admin.sh --host 127.0.0.1 --user root --password xxx \
---            --db k20mon --username admin --password '你的登录密码'
+--        ./deploy/sql/create-admin.sh --host 127.0.0.1 --user root --password MySQL密码 \
+--            --db k20mon --username admin --app-pass '你的登录密码'
 --
 --   2) 自己在 MySQL 客户端里手工执行：
 --        先算 hash：

@@ -421,12 +421,12 @@ type ServiceCatalog struct {
 
 func (ServiceCatalog) TableName() string { return "k20mon_service_catalog" }
 
-// 首次启动且表为空时写入的种子数据，URL 用占位值，由使用者自行改。
+// 首次启动且表为空时写入的种子数据。只放占位示例，不含任何真实服务。
 func DefaultServiceCatalog() []ServiceCatalog {
 	rows := []ServiceCatalog{
 		{ID: "k20mon", Name: "K20Mon", Description: "设备监控与操作中心", Category: "监控", OwnerType: "mine", URL: "http://127.0.0.1:8899", Enabled: true},
-		{ID: "1panel", Name: "1Panel", Description: "服务器管理面板", Category: "管理", OwnerType: "mine", URL: "https://example.com/1panel", Enabled: false},
-		{ID: "it-tools", Name: "IT Tools", Description: "常用开发与运维工具", Category: "工具", OwnerType: "mine", URL: "https://example.com/it-tools", Enabled: false},
+		{ID: "example-panel", Name: "管理面板", Description: "替换成你自己的服务地址", Category: "管理", OwnerType: "mine", URL: "https://example.com/panel", Enabled: false},
+		{ID: "example-tools", Name: "在线工具", Description: "替换成你自己的服务地址", Category: "工具", OwnerType: "mine", URL: "https://example.com/tools", Enabled: false},
 	}
 	for i := range rows {
 		rows[i].SortOrder = i

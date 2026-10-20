@@ -1,6 +1,9 @@
 -- ---------------------------------------------------------------------------
 -- K20Mon 数据库结构
 --
+-- 本文件只包含表结构（DDL），不含任何数据、账号、域名或业务信息。
+-- 全部是 `CREATE ... IF NOT EXISTS`，可重复执行；没有 DROP / DELETE / TRUNCATE。
+--
 -- 什么时候需要跑这个文件：
 --   * 想先手工建库建表（比如 DBA 要先审 DDL）；
 --   * 不想让后端账号有 DDL 权限（AutoMigrate 需要 CREATE/ALTER）。
@@ -12,6 +15,7 @@
 -- 表结构取自 GORM 在 MySQL 8.4 上实际生成的结果，逐字段核对过。
 -- 用法：
 --   mysql -h <host> -P <port> -u root -p < 01-schema.sql
+-- 建管理员账号请用 create-admin.sh（会自动生成 bcrypt）或 02-admin-user.sql。
 -- ---------------------------------------------------------------------------
 
 CREATE DATABASE IF NOT EXISTS `k20mon`

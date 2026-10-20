@@ -1,4 +1,4 @@
-# K20Mon
+﻿# K20Mon
 
 在 Android 手机上（Redmi K20 Pro / SM8150，Ubuntu 26.04 chroot）运行的**设备监控 + 运维控制台**。
 
@@ -199,7 +199,21 @@ cd web && npm install && npm run test && npm run dev   # 8898 端口，代理到
 
 - 采集路径是 SM8150 的，换机型需要改 `collector/collector.go` 里的 `batteryPath` / `chargerPath` / GPU devfreq 路径。
 - 控制代理的白名单动作和前端按钮一一对应，加动作要同时改 `service/control.go` 的白名单和 Python 的 `control_action`。
-- 动态定价（`rate_sync.py`）操作的是外部脚本 `sync-group-rate.sh` 和 systemd timer，不属于本项目，缺少时相关按钮会报错，其余功能不受影响。
+- 动态定价（`rate_sync.py`）操作的是外部脚本 `pricing-sync.sh` 和 systemd timer，不属于本项目，缺少时相关按钮会报错，其余功能不受影响。
+
+## 相关服务
+
+本项目的开发和调试环境用的 AI 模型来自下面这个 API 中转站，顺手放个链接，感兴趣的可以看看。
+
+**VooK · AI API 中转站** → <https://voook.com/sign-up?aff=pTrx>
+
+- 注册即送 **0.5 余额**，可以直接拿来试用
+- 支持 **Claude** 系列模型
+- **DeepSeek 最低 0.05x 倍率**，日常跑代码/调试很划算
+- 兼容 OpenAI 格式接口，改个 `base_url` 就能接进来
+
+> 上面的链接带邀请参数（`?aff=...`），通过它注册我这边会有点返利，不影响你的价格。
+> 不想走邀请的话直接用 `https://voook.com` 即可。
 
 ## License
 

@@ -19,14 +19,14 @@ func (ServiceCatalog) TableName() string {
 	return "k20mon_service_catalog"
 }
 
-// DefaultServiceCatalog seeds an empty catalog on first start. It only runs
-// when the table has no rows, and the root agent's own catalog wins when it
-// already has entries. Replace the placeholder URLs with your own services.
+// DefaultServiceCatalog 只在首次启动且表为空时写入。
+// 这里刻意只放占位示例，不含任何真实服务；请在界面上改成自己的。
+// 如果 root 代理的 /etc/k20mon/services.json 已有条目，会用那份数据覆盖这里的种子。
 func DefaultServiceCatalog() []ServiceCatalog {
 	rows := []ServiceCatalog{
 		{ID: "k20mon", Name: "K20Mon", Description: "设备监控与操作中心", Category: "监控", OwnerType: "mine", URL: "http://127.0.0.1:8899", Enabled: true},
-		{ID: "1panel", Name: "1Panel", Description: "服务器管理面板", Category: "管理", OwnerType: "mine", URL: "https://example.com/1panel", Enabled: false},
-		{ID: "it-tools", Name: "IT Tools", Description: "常用开发与运维工具", Category: "工具", OwnerType: "mine", URL: "https://example.com/it-tools", Enabled: false},
+		{ID: "example-panel", Name: "管理面板", Description: "替换成你自己的服务地址", Category: "管理", OwnerType: "mine", URL: "https://example.com/panel", Enabled: false},
+		{ID: "example-tools", Name: "在线工具", Description: "替换成你自己的服务地址", Category: "工具", OwnerType: "mine", URL: "https://example.com/tools", Enabled: false},
 	}
 	for index := range rows {
 		rows[index].SortOrder = index

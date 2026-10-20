@@ -4,10 +4,12 @@ server/k20mon-server-*
 web/dist/
 web/node_modules/
 web/.vite/
+dist/
 
 # 本地配置与密钥（绝对不要提交）
 deploy/config.yaml
 deploy/.env
+deploy/sql/.schema.tmp.sql
 deploy/*.json.bak
 
 # Python

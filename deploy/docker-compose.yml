@@ -9,6 +9,10 @@ services:
         RUNTIME_IMAGE: ${K20MON_SERVER_RUNTIME:-alpine:3.20}
     image: k20mon/server:${K20MON_IMAGE_TAG:-latest}
     restart: unless-stopped
+    # 让容器能用 host.docker.internal 连宿主机的 MySQL。
+    # config.yaml 里的 mysql.path 填 host.docker.internal 即可，换机器/换网络都不用改。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${K20MON_SERVER_PORT:-18888}:8888"
     volumes:

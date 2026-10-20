@@ -5,7 +5,10 @@
 #   K20MON_MYSQL_DSN="user:pass@tcp(host:3306)/db?charset=utf8mb4&parseTime=True&loc=Local"
 #   K20MON_JWT_KEY="..."
 mysql:
-  path: 127.0.0.1
+  # 容器里不要填 127.0.0.1（那是容器自己）。
+  # host.docker.internal 由 compose 的 extra_hosts 提供，docker 20.10+ 可用。
+  # 也可以填 docker 网关 IP：docker network inspect <项目名>_default --format '{{(index .IPAM.Config 0).Gateway}}'
+  path: host.docker.internal
   port: "3306"
   config: charset=utf8mb4&parseTime=True&loc=Local
   db-name: k20mon

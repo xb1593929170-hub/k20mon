@@ -41,52 +41,94 @@ k20mon/
 │   ├── .env.example            端口 / 配置路径 / 镜像 tag
 │   ├── config.yaml.example     MySQL / JWT / 端口
 │   ├── services.json.example   服务宫格初始数据
+│   ├── sql/
+│   │   ├── 01-schema.sql       建库 + 三张表的完整 DDL
+│   │   ├── 02-admin-user.sql   建管理员的 SQL 模板
+│   │   └── create-admin.sh     一键：建库 → 建表 → 建管理员 → 校验
 │   └── agent/                  root 控制代理（纯标准库 Python）
 │       ├── k20mon_agent.py     Unix socket 服务 + 动作白名单
 │       ├── k20mon-agent.service
-│       └── rate_sync.py        可选：外部定价任务控制
+│       ├── rate_sync.py        可选：外部定价任务控制
+│       ├── test_agent.py       纯函数单测（11 个用例）
+│       └── test_rate_sync.py   （7 个用例）
+├── scripts/
+│   ├── verify.sh               全量校验（= CI 跑的东西）
+│   ├── build-images.sh         构建镜像 / 多架构 / 导出离线包
+│   └── package-release.sh      打源码发布包 + sha256
+├── Makefile                    所有常用操作的入口，直接 `make` 看列表
 └── docs/
     ├── AI-RESTORE.md           交给 AI 完整还原本项目（可直接整段粘贴）
     ├── ARCHITECTURE.md         数据流、算法、协议细节
     ├── API.md                  全部 HTTP 接口契约
     ├── DEPLOY.md               从零部署 / 排错 / 升级回滚
+    ├── RELEASE.md              开源发布流程：git / 镜像 / 打包 / 离线分发
     └── CLEANUP.md              相对原始代码删掉了什么、为什么
 ```
 
 ## 快速开始
 
 ```bash
-# 1. 配置
+# 1. 建库建表建管理员（自动生成 bcrypt，自动找 mysql/bcrypt 依赖）
+./deploy/sql/create-admin.sh --host 127.0.0.1 --user root --password '你的 MySQL 密码'
+# 输出里会给一个随机登录密码，记下来
+
+# 2. 写配置
 cp deploy/.env.example deploy/.env
-cp deploy/config.yaml.example deploy/config.yaml   # 填 MySQL 账号密码
+cp deploy/config.yaml.example deploy/config.yaml
+chmod 600 deploy/config.yaml     # 填 MySQL 地址/账号密码 + 一段随机 jwt.signing-key
 
-# 2. 起服务（手机上或任意 aarch64/amd64 Linux）
-cd deploy && docker compose up -d --build
+# 3. 构建镜像（国内网络加 --cn）
+./scripts/build-images.sh --tag 1.0.0 --cn
 
-# 3. 装 root 控制代理（可选，但操作中心依赖它）
-sudo install -d -m 0755 /usr/local/libexec /etc/k20mon /run/k20mon-status
-sudo install -m 0755 deploy/agent/k20mon_agent.py /usr/local/libexec/
-sudo install -m 0644 deploy/agent/rate_sync.py    /usr/local/libexec/
-sudo install -m 0644 deploy/agent/k20mon-agent.service /etc/systemd/system/
-sudo install -m 0644 deploy/services.json.example /etc/k20mon/services.json
-sudo systemctl daemon-reload && sudo systemctl enable --now k20mon-agent
+# 4. 装 root 控制代理（可选，但操作中心依赖它）
+make agent-install
 
-# 4. 打开 http://<设备IP>:8899，用 MySQL sys_users 表里的账号登录
+# 5. 起服务
+cd deploy && K20MON_IMAGE_TAG=1.0.0 docker compose up -d
+
+# 6. 验证
+curl -s http://127.0.0.1:18888/health            # {"status":"ok",...}
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8899/    # 200
 ```
 
-前端默认账号是 `admin`，密码取自 `sys_users.password`（bcrypt）。建库建表的 SQL 见
-[docs/DEPLOY.md](docs/DEPLOY.md#1-准备-mysql)。
+浏览器打开 `http://<设备IP>:8899`，用第 1 步的账号登录。
 
-> 注意：`config.yaml` 里 MySQL 地址**不能填 `127.0.0.1`**（那是容器自己），要么填
-> `docker network inspect <项目名>_default` 得到的网关 IP，要么用 `host.docker.internal`。
+> **最容易踩的坑**：`config.yaml` 里的 MySQL 地址**不能填 `127.0.0.1`**（那是容器自己）。
+> 要么填 `docker network inspect <项目名>_default` 得到的网关 IP，要么用
+> `host.docker.internal`（compose 里加 `extra_hosts`）。
 > 详见 [docs/DEPLOY.md](docs/DEPLOY.md#mysql-地址怎么填最容易踩的坑)。
 
 ## 开发与校验
 
 ```bash
-make check      # gofmt + go vet + go test + npm test + python unittest
-make build      # 本地构建后端二进制 + 前端产物
-make up / down / logs
+make            # 列出所有目标
+make check      # 快速校验：gofmt + go vet + go test + npm test + python unittest
+make verify     # 全量校验（= CI 同款，含构建）
+make build      # 构建后端二进制 + 前端产物
+make images     # 构建 Docker 镜像
+make release    # 打源码发布包到 dist/
+make up / down / logs / ps
+```
+
+单独跑：
+
+```bash
+cd server && go test ./...              # 后端
+cd web && npm test && npm run build     # 前端
+cd deploy/agent && python3 -m unittest test_agent test_rate_sync -v
+```
+
+## 部署与发布
+
+| 场景 | 看哪 |
+|---|---|
+| 从零部署到设备 | [docs/DEPLOY.md](docs/DEPLOY.md) |
+| 构建镜像（含国内镜像源、多架构、离线包） | [docs/DEPLOY.md](docs/DEPLOY.md#第-3-步构建镜像) |
+| 数据库初始化（SQL / 脚本） | [docs/DEPLOY.md](docs/DEPLOY.md#第-1-步准备数据库) |
+| 开源到 GitHub / 打 tag / 发 Release | [docs/RELEASE.md](docs/RELEASE.md) |
+| 接口契约 | [docs/API.md](docs/API.md) |
+| 内部实现 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 用 AI 重建整个项目 | [docs/AI-RESTORE.md](docs/AI-RESTORE.md) |
 ```
 
 详细步骤、端口占用处理、回滚方式见 [docs/DEPLOY.md](docs/DEPLOY.md)。
